@@ -46,7 +46,16 @@
         and display the resulting number of years and actual ending balance on the page.
     </p>
 
+    <h2>Part 3 - Interactive Simulation</h2>
 
+    <label>Initial Balance: <input type="number" id="initial" value="150000"></label><br>
+    <label>Target Balance: <input type="number" id="target" value="1000000"></label><br>
+    <label>Mean Return (%): <input type="number" id="mean" value="8"></label><br>
+    <label>Standard Deviation (%): <input type="number" id="stdev" value="15"></label><br>
+    <button id="simulateBtn">Simulate</button>
+    
+    <p><strong>Results:</strong></p>
+    <p id="results"></p>
 
     <script src="https://cdn.jsdelivr.net/npm/d3-random@3"></script>
     <script type="text/javascript">
@@ -58,6 +67,20 @@
         console.log("---------------------")
         console.log("PART 1...")
 
+        let originalBalance = 150000;
+let balance = originalBalance;
+const target = 1000000;
+const rate = 0.08;
+let years = 0;
+
+while (balance < target) {
+    balance *= (1 + rate);
+    years++;
+}
+
+console.log("Original Balance:", formatUSD(originalBalance));
+console.log("Years to reach $1M:", years);
+console.log("Final Balance:", formatUSD(balance));
 
 
 
@@ -66,7 +89,27 @@
         console.log("---------------------")
         console.log("PART 2...")
 
+        let originalBalance2 = 150000;
+let balance2 = originalBalance2;
+const target2 = 1000000;
+let years2 = 0;
 
+const mean = 0.08;
+const stdev = 0.15;
+const randomReturn = d3.randomNormal(mean, stdev);
+
+console.log("Year | Return | Balance");
+
+while (balance2 < target2) {
+    const yearlyReturn = randomReturn();
+    balance2 *= (1 + yearlyReturn);
+    years2++;
+    console.log(`${years2} | ${(yearlyReturn * 100).toFixed(2)}% | ${formatUSD(balance2)}`);
+}
+
+console.log("Original Balance:", formatUSD(originalBalance2));
+console.log("Years to reach $1M:", years2);
+console.log("Final Balance:", formatUSD(balance2));
 
 
 
@@ -74,7 +117,29 @@
         console.log("---------------------")
         console.log("PART 3...")
 
+        document.getElementById("simulateBtn").addEventListener("click", function () {
+    const initial = parseFloat(document.getElementById("initial").value);
+    const target = parseFloat(document.getElementById("target").value);
+    const mean = parseFloat(document.getElementById("mean").value) / 100;
+    const stdev = parseFloat(document.getElementById("stdev").value) / 100;
 
+    let balance = initial;
+    let years = 0;
+    const randomReturn = d3.randomNormal(mean, stdev);
+
+    while (balance < target) {
+        const yearlyReturn = randomReturn();
+        balance *= (1 + yearlyReturn);
+        years++;
+    }
+
+    document.getElementById("results").innerHTML = `
+        <strong>Initial:</strong> ${formatUSD(initial)}<br>
+        <strong>Target:</strong> ${formatUSD(target)}<br>
+        <strong>Years to reach goal:</strong> ${years}<br>
+        <strong>Final Balance:</strong> ${formatUSD(balance)}
+    `;
+});
 
 
     </script>
