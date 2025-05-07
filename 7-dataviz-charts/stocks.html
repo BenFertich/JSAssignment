@@ -107,75 +107,115 @@
     <div id="dataviz-container"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-    <script src="https://cdn.plot.ly/plotly-3.0.0.min.js"></script>
-    <script type="text/javascript">
+<!--script src="https://cdn.plot.ly/plotly-latest.min.js"></script-->
+<script src="https://cdn.plot.ly/plotly-3.0.0.min.js"></script>
+<script type="text/javascript">
 
-        function formatUSD(price) {
-            return `$${price.toFixed(2)}`
+function formatUSD(price){
+    return `$${price.toFixed(2)}`
+}
+
+function formatPct(percentage){
+    return `${(percentage * 100).toFixed(2)}%`
+}
+
+// AVOID HARD-CODING THE CREDENTIALS
+// USE SESSION STORAGE TO MINIMIZE THE NUMBER OF TIMES WE HAVE TO PROVIDE THE CREDENTIAL
+// sessionStorage.clear()
+
+// check session storage for the API Key:
+var apiKey = sessionStorage.getItem("ALPHAVANTAGE_API_KEY")
+if (!apiKey){
+    apiKey = prompt("Please enter your AlphaVantage API key:")
+    sessionStorage.setItem("ALPHAVANTAGE_API_KEY", apiKey)
+}
+
+// form elements:
+var stockSelector = document.getElementById("stock-selector")
+
+// display elements:
+// var displaySymbol = document.getElementById("display-stock-symbol")
+var displayEarliestDate = document.getElementById("display-earliest-date")
+var displayLatestDate = document.getElementById("display-latest-date")
+var displayEarliestClose = document.getElementById("display-earliest-close")
+var displayLatestClose = document.getElementById("display-latest-close")
+var displayPctChange = document.getElementById("display-return")
+var displayHigh = document.getElementById("display-high")
+var displayLow = document.getElementById("display-low")
+
+function updateDashboard(){
+    console.log("--------------------")
+
+    var symbol = stockSelector.value
+    console.log("SYMBOL:", symbol)
+
+    var requestUrl = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&datatype=csv&symbol=" + symbol + "&apikey=" + apiKey
+    d3.csv(requestUrl).then(function(data){
+        console.log("DATA:", data)
+
+        console.log("---------------------")
+        console.log("PART 1...")
+
+        console.log("DAYS:", data.length)
+
+        var earliest = data[data.length-1]
+        var latest = data[0]
+        var earliestClose = parseFloat(earliest.adjusted_close)
+        var latestClose = parseFloat(latest.adjusted_close)
+
+        console.log("EARLIEST:", earliest.timestamp, formatUSD(earliestClose))
+        console.log("LATEST:", latest.timestamp, formatUSD(latestClose))
+
+        var pctChange = (latestClose - earliestClose) / earliestClose
+        console.log("RETURN:", formatPct(pctChange))
+
+        var dates = []
+        var prices = []
+        data.forEach(function(row){
+            dates.push(row.timestamp)
+            prices.push(parseFloat(row.adjusted_close))
+        })
+
+        var highPrice = d3.max(prices)
+        var lowPrice = d3.min(prices)
+        console.log("100-DAY HIGH:", formatUSD(highPrice))
+        console.log("100-DAY LOW:", formatUSD(lowPrice))
+
+        console.log("---------------------")
+        console.log("PART 2...")
+
+        displayEarliestDate.innerText = earliest.timestamp
+        displayLatestDate.innerText = latest.timestamp
+        displayEarliestClose.innerText = formatUSD(earliestClose)
+        displayLatestClose.innerText = formatUSD(latestClose)
+        displayPctChange.innerText = formatPct(pctChange)
+        displayHigh.innerText = formatUSD(highPrice)
+        displayLow.innerText = formatUSD(lowPrice)
+
+        // DATAVIZ
+        var chartData = [
+            {x: dates, y: prices, mode: "lines+markers"}
+        ]
+        var chartLayout = {
+            title: {text: `Stock Prices (${symbol})`},
+            xaxis: {title: {text: "Date"}},
+            yaxis: {title: {text: "Adjusted Closing Price ($)"}}
         }
+        Plotly.newPlot("dataviz-container", chartData, chartLayout, {responsive: true})
 
-        function formatPct(percentage) {
-            return `${(percentage * 100).toFixed(2)}%`
-        }
+    }).catch(function(err){
+        console.error("OOPS", err)
+        alert("OOPS, please check your inputs and try again. For example, try using a premium API key.")
+    })
+}
 
-        // AVOID HARD-CODING THE CREDENTIALS
-        // USE SESSION STORAGE TO MINIMIZE THE NUMBER OF TIMES WE HAVE TO PROVIDE THE CREDENTIAL
-        // sessionStorage.clear()
+// initial chart when page loads
+updateDashboard()
 
-        // check session storage for the API Key:
-        var apiKey = sessionStorage.getItem("ALPHAVANTAGE_API_KEY")
-        if (!apiKey) {
-            // if it isn't there, ask the user to supply it:
-            apiKey = prompt("Please enter your AlphaVantage API key:")
-            // store it in the session for later (so it will persist after refreshing the page)
-            sessionStorage.setItem("ALPHAVANTAGE_API_KEY", apiKey)
-        }
+// update when dropdown changes
+stockSelector.addEventListener("change", updateDashboard, false)
 
+</script>
 
-        // SELECTORS
-        // TODO
-
-
-
-        // FUNCTION DEFINITION
-        function updateDashboard() {
-            console.log("--------------------")
-
-            // capturing form inputs:
-            var symbol = "NFLX" // TODO: get from drop-down instead
-            console.log("SYMBOL:", symbol)
-
-            var requestUrl = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&datatype=csv&symbol=" + symbol + "&apikey=" + apiKey
-            d3.csv(requestUrl).then(function(data) {
-                console.log("DATA:", data)
-                // observe the prices are actually strings so to do math with them and chart them we will need to convert them to numbers
-
-                console.log("---------------------")
-                console.log("PART 1...")
-
-
-
-
-
-                console.log("---------------------")
-                console.log("PART 2...")
-
-
-
-
-
-            }).catch(function(err){
-                console.error("OOPS", err)
-                alert("OOPS, please check your inputs and try again. For example, try using a premium API key.")
-            })
-        }
-
-        // trigger an initial chart update when the page loads:
-        //TODO
-
-        // trigger a subsequent chart update whenever the dropdown option is selected:
-        //TODO
-
-    </script>
 </body>
 </html>
